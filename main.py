@@ -6,7 +6,7 @@ import tkinter as tk
 from unidecode import unidecode
 from collections import Counter
 from tkinter import filedialog, messagebox, ttk
-#from ttkthemes import ThemedTk
+from ttkthemes import ThemedTk
 
 def clean_filename(filename):
     cleaned_filename = filename
@@ -67,43 +67,54 @@ def select_folder(var):
 def create_main_window(root):
     root.title("Organisateur de fichiers")
     root.tk.call('lappend', 'auto_path', './awthemes-10.4.0')
-    root.tk.call('package', 'require', 'awthemes')
     root.tk.call('package', 'require', 'awdark')
+    root.tk.call("::themeutils::setThemeColors", "arc",
+                 "style.progressbar", "rounded-line",
+                 "style.scale", "circle-rev",
+                 "style.scrollbar-grip", "none",
+                 "scrollbar.has.arrows", "false")
     style = ttk.Style()
     style.theme_use("awdark")
     style.configure("TProgressbar", background='green', troughcolor='grey')
 
 def create_container(root):
     container = ttk.Frame(root, padding=20)
-    container.pack()
+    container.pack(fill="both", expand=True)
     container.columnconfigure(0, weight=1)
     container.columnconfigure(1, weight=1)
+    container.rowconfigure(0, weight=1)
+    container.rowconfigure(1, weight=1)
+    container.rowconfigure(2, weight=1)
+    container.rowconfigure(3, weight=1)
+    container.rowconfigure(4, weight=1)
+    container.rowconfigure(5, weight=1)
+    container.rowconfigure(6, weight=1)
     return container
 
 def main():
-    root = tk.Tk()
+    root = ThemedTk(theme="arc")
     create_main_window(root)
     container = create_container(root)
     
     # Ajouter un bouton pour sélectionner le dossier source
     src_button = ttk.Button(container, text="Sélectionner le dossier source", command=lambda: select_folder(src_var))
-    src_button.grid(row=0, column=0, sticky="we", padx=(0, 10), pady=(0, 10))
+    src_button.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
 
     # Ajouter un champ de texte pour afficher le dossier source sélectionné
     src_var = tk.StringVar()
     src_var.set("Aucun dossier sélectionné")
     src_entry = ttk.Entry(container, textvariable=src_var, state="readonly")
-    src_entry.grid(row=0, column=1, sticky="we", pady=(0, 10), padx=(0, 10))
+    src_entry.grid(row=0, column=1, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
     # Ajouter un bouton pour sélectionner le dossier de destination
     dst_button = ttk.Button(container, text="Sélectionner le dossier de destination", command=lambda: select_folder(dst_var))
-    dst_button.grid(row=1, column=0, sticky="we", pady=(0, 10), padx=(0, 10))
+    dst_button.grid(row=1, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
     # Ajouter un champ de texte pour afficher le dossier de destination sélectionné
     dst_var = tk.StringVar()
     dst_var.set("Aucun dossier sélectionné")
     dst_entry = ttk.Entry(container, textvariable=dst_var, state="readonly")
-    dst_entry.grid(row=1, column=1, sticky="we", pady=(0, 10), padx=(0, 10))
+    dst_entry.grid(row=1, column=1, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
     def dis():
         dst_entry.configure(state="readonly" if same_dir.get() else "disabled") 
@@ -112,13 +123,13 @@ def main():
     # Ajouter une case à cocher pour trier dans le même dossier
     same_dir = tk.BooleanVar(value=False)
     same_dir_check = ttk.Checkbutton(container, text="Trier dans le même dossier", variable=same_dir)
-    same_dir_check.grid(row=2, column=0, sticky="we", pady=(0, 10), padx=(0, 10))
+    same_dir_check.grid(row=2, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10))
     same_dir_check.bind("<Button-1>", lambda event: dis())
 
     # Ajouter une case à cocher pour désactiver la conversion des images
     convert_var = tk.BooleanVar(value=True)
     convert_check = ttk.Checkbutton(container, text="Convertir les images JXR", variable=convert_var)
-    convert_check.grid(row=3, column=0, sticky="we", pady=(0, 10), padx=(0, 10))
+    convert_check.grid(row=3, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
     def sort():
         if same_dir.get():
@@ -127,13 +138,13 @@ def main():
 
     # Ajouter un bouton pour lancer le tri des fichiers
     start_button = ttk.Button(container, text="Démarrer le tri", command=lambda: sort() if start_button["text"] == "Démarrer le tri" else cancel_sorting_operation())
-    start_button.grid(row=4, column=1, sticky="we", pady=(0, 10), padx=(0, 10))
+    start_button.grid(row=4, column=1, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
     # Ajouter une barre de progression pour le tri des fichiers
     progress_bar = ttk.Progressbar(container, orient="horizontal", mode="determinate")
-    progress_bar.grid(row=5, column=0, sticky="we", pady=(0, 10), padx=(0, 10), columnspan=2)
+    progress_bar.grid(row=5, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10), columnspan=2)
     progress_label = ttk.Label(container, text="")
-    progress_label.grid(row=6, column=0, sticky="we", pady=(0, 10), padx=(0, 10), columnspan=2)
+    progress_label.grid(row=6, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10), columnspan=2)
 
     widgets = [src_button, src_entry, dst_button, dst_entry, same_dir_check, convert_check]
 
