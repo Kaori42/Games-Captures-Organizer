@@ -6,12 +6,12 @@ import tkinter as tk
 from unidecode import unidecode
 from collections import Counter
 from tkinter import filedialog, messagebox, ttk
+#from ttkthemes import ThemedTk
 
 def clean_filename(filename):
     cleaned_filename = filename
     
     # Supprimer les dates, la version, les parenthèses et les tirets entourés d'espaces en une seule étape
-    #cleaned_filename = re.sub(r'(\s*\d{1,2}_\d{1,2}_\d{4}\s*$)|(\s*-\s*\d+\.\d+\.\d+\.\d+\s*\(.*?\)\s*)|(\s-.*)', '', cleaned_filename).strip()
     cleaned_filename = re.sub(r'(\s*\d{1,2}_\d{1,2}_\d{4}\s*$)|(\s*-\s*\d+\.\d+\.\d+\.\d+\s*\(.*?\)\s*)|(\s-.*)|(Screenshot.*)', '', cleaned_filename).strip()
 
     # Supprimer les underscores
@@ -67,6 +67,7 @@ def select_folder(var):
 def create_main_window(root):
     root.title("Organisateur de fichiers")
     root.tk.call('lappend', 'auto_path', './awthemes-10.4.0')
+    root.tk.call('package', 'require', 'awthemes')
     root.tk.call('package', 'require', 'awdark')
     style = ttk.Style()
     style.theme_use("awdark")
