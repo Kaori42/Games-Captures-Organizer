@@ -14,14 +14,11 @@ def clean_filename(filename):
     # Supprimer les dates, la version, les parenthèses et les tirets entourés d'espaces en une seule étape
     cleaned_filename = re.sub(r'(\s*\d{1,2}_\d{1,2}_\d{4}\s*$)|(\s*-\s*\d+\.\d+\.\d+\.\d+\s*\(.*?\)\s*)|(\s-.*)|(Screenshot.*)', '', cleaned_filename).strip()
 
-    # Supprimer les underscores
-    cleaned_filename = cleaned_filename.replace('_', '')
-    
-    # Supprimer les espaces multiples
-    cleaned_filename = re.sub(r'\s{2,}', ' ', cleaned_filename)
+    # Supprimer les underscores et espaces multiples
+    cleaned_filename = cleaned_filename.replace('_', '').replace('  ', ' ')
 
     # Remplacer les caractères Unicode problématiques
-    cleaned_filename = unidecode(cleaned_filename)
+    #cleaned_filename = unidecode(cleaned_filename)
 
     return cleaned_filename
 
@@ -45,6 +42,10 @@ def common_filename_part(folder_path):
 
 def find_game_name(filename, common_parts):
     cleaned_filename = clean_filename(filename)
+    
+    # Vérifie si le nom du fichier contient "Ce PC", "Photos" ou "Screenshot"
+    if any(cleaned_filename.startswith(s) for s in ["Ce PC", "Photos", "Screenshot"]):
+        return "Default"
 
     for game_name in common_parts:
         if game_name in cleaned_filename:
@@ -80,15 +81,10 @@ def create_main_window(root):
 def create_container(root):
     container = ttk.Frame(root, padding=20)
     container.pack(fill="both", expand=True)
-    container.columnconfigure(0, weight=1)
-    container.columnconfigure(1, weight=1)
-    container.rowconfigure(0, weight=1)
-    container.rowconfigure(1, weight=1)
-    container.rowconfigure(2, weight=1)
-    container.rowconfigure(3, weight=1)
-    container.rowconfigure(4, weight=1)
-    container.rowconfigure(5, weight=1)
-    container.rowconfigure(6, weight=1)
+    for i in range(2):
+        container.columnconfigure(i, weight=1)
+    for i in range(7):
+        container.rowconfigure(i, weight=1)
     return container
 
 def main():
