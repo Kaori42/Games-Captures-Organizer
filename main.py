@@ -2,6 +2,7 @@ import os
 import subprocess
 import re
 import time
+import threading
 import tkinter as tk
 from unidecode import unidecode
 from collections import Counter
@@ -18,7 +19,7 @@ def clean_filename(filename):
     cleaned_filename = cleaned_filename.replace('_', '').replace('  ', ' ')
 
     # Remplacer les caractères Unicode problématiques
-    #cleaned_filename = unidecode(cleaned_filename)
+    cleaned_filename = unidecode(cleaned_filename)
 
     return cleaned_filename
 
@@ -43,7 +44,7 @@ def common_filename_part(folder_path):
 def find_game_name(filename, common_parts):
     cleaned_filename = clean_filename(filename)
     
-    # Vérifie si le nom du fichier contient "Ce PC", "Photos" ou "Screenshot"
+    # Vérifie si le nom du fichier commence par "Ce PC", "Photos" ou "Screenshot"
     if any(cleaned_filename.startswith(s) for s in ["Ce PC", "Photos", "Screenshot"]):
         return "Default"
 
@@ -175,6 +176,17 @@ def main():
         cancel_sorting = True
         start_button.configure(text="Démarrer le tri", command=lambda: sort())
         restore_widget_states(widgets, saved_states)
+        
+        
+    max_threads = 1
+    semaphore = threading.Semaphore(max_threads)
+
+
+    def execute_hdrfix(dst_path, conv_path):
+        semaphore.acquire()
+        subprocess.call(['hdrfix.exe', dst_path, conv_path], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
+        semaphore.release()
+
 
     # Ajouter une fonction pour lancer le tri des fichiers
     def start_sorting(src_folder, dst_folder, do_convert):
@@ -231,7 +243,8 @@ def main():
 
                 if file_ext == "jxr" and do_convert:
                     conv_path = os.path.join(dst_folder, game_name, "Conv", os.path.splitext(filename)[0] + '-sdr.png')
-                    subprocess.call(['hdrfix.exe', dst_path, conv_path], stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+                    hdrfix_thread = threading.Thread(target=execute_hdrfix, args=(dst_path, conv_path))
+                    hdrfix_thread.start()
 
             current_file += 1
             elapsed_time = time.time() - start_time
