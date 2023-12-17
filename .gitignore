@@ -1,3 +1,6 @@
+test_folder/
+test_folder_backup/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

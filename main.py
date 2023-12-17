@@ -148,39 +148,32 @@ def create_container(root):
     return container
 
 
-def tri(
-    src_folder, dst_folder, do_convert, update_progress_bar, total_files, file_list
+def sort_files(
+    src_folder,
+    dst_folder,
+    do_convert,
+    update_progress,
+    file_list,
+    total_files,
+    check_cancel=False,
 ):
-    # Recherche des noms de jeux communs
     common_part = common_filename_part(src_folder)
-
-    # Initialisation du temps de début
     start_time = time.time()
-    current_file = 0
 
-    # Tri des fichiers par nom de jeu
-    for entry in file_list:
-        filename = entry.name
-        # Vérifiez si l'utilisateur a demandé d'annuler le tri à la fin de chaque itération
-        if cancel_sorting:
+    for current_file, entry in enumerate(file_list, start=1):
+        if check_cancel and cancel_sorting:  # Vérifier si l'annulation est nécessaire
             break
 
-        # Récupération de l'extension du fichier
+        filename = entry.name
         file_ext = os.path.splitext(filename)[1].lower()[1:]
-
-        # Recherche du nom de jeu dans le nom du fichier
         game_name = find_game_name(filename, common_part)
 
-        # Création des dossiers nécessaires
         create_folder_structure(dst_folder, game_name)
-
-        # Déplacement du fichier vers le dossier correspondant
         src_path = os.path.join(src_folder, filename)
         dst_path = os.path.join(dst_folder, game_name, file_ext.upper(), filename)
 
         if file_ext in ["jxr", "png"]:
             os.rename(src_path, dst_path)
-
             if file_ext == "jxr" and do_convert:
                 conv_path = os.path.join(
                     dst_folder,
@@ -194,14 +187,42 @@ def tri(
                     stderr=subprocess.STDOUT,
                 )
 
-        current_file += 1
         elapsed_time = time.time() - start_time
         estimated_time_remaining = (elapsed_time / current_file) * (
             total_files - current_file
         )
-        update_progress_bar(
+
+        update_progress(
             current_file, total_files, elapsed_time, estimated_time_remaining
         )
+
+
+# Pour la ligne de commande avec tqdm
+def args_tri(src_folder, dst_folder, do_convert, total_files, file_list):
+    with tqdm(total=total_files, desc="Tri des fichiers", unit="fichier") as pbar:
+        sort_files(
+            src_folder,
+            dst_folder,
+            do_convert,
+            lambda _, __: pbar.update(1),
+            file_list,
+            total_files,
+        )
+
+
+# Pour l'interface graphique avec la barre de progression Tkinter
+def tri(
+    src_folder, dst_folder, do_convert, update_progress_bar, total_files, file_list
+):
+    sort_files(
+        src_folder,
+        dst_folder,
+        do_convert,
+        update_progress_bar,
+        file_list,
+        total_files,
+        check_cancel=True,
+    )
 
 
 def build_gui(root, container):
@@ -376,47 +397,6 @@ def build_gui(root, container):
             messagebox.showinfo("Annulé", "Le tri des fichiers a été annulé.")
         else:
             messagebox.showinfo("Terminé", "Le tri des fichiers est terminé !")
-
-
-def args_tri(src_folder, dst_folder, do_convert, total_files, file_list):
-    # Recherche des noms de jeux communs
-    common_part = common_filename_part(src_folder)
-
-    # Tri des fichiers par nom de jeu
-    with tqdm(total=total_files, desc="Tri des fichiers ", unit=" fichier(s)") as pbar:
-        for entry in file_list:
-            filename = entry.name
-
-            # Récupération de l'extension du fichier
-            file_ext = os.path.splitext(filename)[1].lower()[1:]
-
-            # Recherche du nom de jeu dans le nom du fichier
-            game_name = find_game_name(filename, common_part)
-
-            # Création des dossiers nécessaires
-            create_folder_structure(dst_folder, game_name)
-
-            # Déplacement du fichier vers le dossier correspondant
-            src_path = os.path.join(src_folder, filename)
-            dst_path = os.path.join(dst_folder, game_name, file_ext.upper(), filename)
-
-            if file_ext in ["jxr", "png"]:
-                os.rename(src_path, dst_path)
-
-                if file_ext == "jxr" and do_convert:
-                    conv_path = os.path.join(
-                        dst_folder,
-                        game_name,
-                        "Conv",
-                        os.path.splitext(filename)[0] + "-sdr.png",
-                    )
-                    subprocess.call(
-                        ["hdrfix.exe", dst_path, conv_path],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.STDOUT,
-                    )
-
-            pbar.update(1)
 
 
 def start_args_sorting(src_folder, dst_folder, do_convert):
