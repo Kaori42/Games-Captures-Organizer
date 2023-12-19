@@ -1,5 +1,5 @@
 from tests import RichTestRunner, unittest
-from main import clean_filename
+from game_names import clean_filename
 
 class TestCleanFilename(unittest.TestCase):
     def test_remove_dates(self):

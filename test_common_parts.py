@@ -1,5 +1,5 @@
 from tests import RichTestRunner, unittest
-from main import common_filename_part
+from game_names import common_filename_part
 
 
 class TestCommonFilenameParts(unittest.TestCase):
