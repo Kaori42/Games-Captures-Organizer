@@ -13,6 +13,12 @@ from colorama import Fore, Style
 
 
 def parse_args():
+    """
+    Parse command line arguments using the argparse module and return the parsed arguments.
+
+    Returns:
+        argparse.Namespace or None: The parsed command line arguments as an argparse.Namespace object if there are any arguments, otherwise None.
+    """
     parser = argparse.ArgumentParser(description="Organisateur de fichiers")
     parser.add_argument("--src", help="Chemin du dossier source")
     parser.add_argument("--dst", help="Chemin du dossier de destination")
@@ -22,17 +28,27 @@ def parse_args():
     parser.add_argument(
         "--same_folder", help="Trier dans le même dossier", action="store_true"
     )
-    # Retourne None si aucun argument n'est fourni
     return parser.parse_args() if len(sys.argv) > 1 else None
 
 
 def clean_filename(filename):
-    # Vérifie si la chaîne ne contient que des chiffres et des underscores
+    """
+    Cleans up a filename by removing certain patterns.
+
+    Args:
+        filename (str): The name of the file to be cleaned.
+
+    Returns:
+        cleaned_filename (str): The cleaned version of the input filename.
+
+    Examples:
+        >>> filename = "1_2_2022 10_30_45 - Example File (1).txt"
+        >>> clean_filename(filename)
+        'Example File.txt'
+    """
     if re.fullmatch(r"\d+(_\d+)*", filename):
-        # Ne garde que la première séquence de chiffres
         return re.search(r"\d+", filename).group()
 
-    # Supprimer les dates, versions, parenthèses, tirets et espaces supplémentaires
     pattern = (
         r"(\s*\d{1,2}_\d{1,2}_\d{2,4}(?:\s*\d{1,2}_\d{1,2}_\d{1,2})?\s*)"
         r"|(\s*-\s*\d+\.\d+\.\d+\.\d+\s*\(.*?\)\s*)"
@@ -40,10 +56,8 @@ def clean_filename(filename):
     )
     cleaned_filename = re.sub(pattern, "", filename).strip()
 
-    # Remplacer les underscores par des espaces
     cleaned_filename = cleaned_filename.replace("_", " ")
 
-    # Supprimer les espaces multiples
     cleaned_filename = re.sub(r"\s+", " ", cleaned_filename).strip()
 
     return cleaned_filename
@@ -57,7 +71,7 @@ def common_filename_part(folder_path):
         folder_path (str): The path of the folder containing the files.
 
     Returns:
-        list: A list of common parts of filenames in the specified folder.
+        common_parts (list): A list of common parts of filenames in the specified folder.
     """
     files = os.listdir(folder_path)
 
@@ -84,9 +98,18 @@ def common_filename_part(folder_path):
 
 
 def find_game_name(filename, common_parts):
+    """
+    Finds the name of the game in the specified common_parts.
+
+    Args:
+        filename (str): The name of the current file.
+        common_parts (list): A list of common parts of filenames in the specified folder.
+
+    Returns:
+        str: The name of the game in the specified common_parts.
+    """
     cleaned_filename = clean_filename(filename)
 
-    # Vérifie si le nom du fichier commence par "Ce PC", "Photos" ou "Screenshot"
     if any(cleaned_filename.startswith(s) for s in ["Ce PC", "Photos", "Screenshot"]):
         return "Default"
 
@@ -97,14 +120,35 @@ def find_game_name(filename, common_parts):
     return "Default"
 
 
-def create_folder_structure(base_folder, folder_name):
-    for subfolder in ["JXR", "PNG", "Conv"]:
+def create_folder_structure(base_folder, folder_name, file_ext):
+    """
+    Creates the folder structure for the specified file extension and game name.
+
+    Args:
+        base_folder (str): The path of the base folder.
+        folder_name (str): The name of the folder to create.
+        file_ext (list): The file extension of the current file.
+    """
+    folders_to_create = {
+        "jxr": ["JXR", "Conv"],
+        "png": ["PNG"],
+    }
+
+    subfolders = folders_to_create.get(file_ext.lower(), [])
+
+    for subfolder in subfolders:
         path = os.path.join(base_folder, folder_name, subfolder)
         if not os.path.exists(path):
             os.makedirs(path)
 
 
 def select_folder(var):
+    """
+    Allows the user to select a folder and sets the specified variable to the path of the selected folder.
+
+    Args:
+        var (str): The variable to set to the path of the selected folder.
+    """
     folder_path = filedialog.askdirectory()
     if folder_path != "":
         var.set(folder_path)
@@ -113,6 +157,12 @@ def select_folder(var):
 
 
 def create_main_window(root):
+    """
+    Creates the main window.
+
+    Args:
+        root (ThemedTk): The root window.
+    """
     root.title("Organisateur de fichiers")
     root.tk.call("lappend", "auto_path", "./awthemes-10.4.0")
     root.tk.call("package", "require", "awdark")
@@ -134,6 +184,15 @@ def create_main_window(root):
 
 
 def create_container(root):
+    """
+    Creates the container for the widgets.
+
+    Args:
+        root (ThemedTk): The root window.
+
+    Returns:
+        container (Frame): The container for the widgets.
+    """
     container = ttk.Frame(root, padding=20)
     container.pack(fill="both", expand=True)
     container.columnconfigure(0, weight=1)
@@ -157,18 +216,30 @@ def sort_files(
     total_files,
     check_cancel=False,
 ):
+    """
+    Sorts the files in the specified source folder and moves them to the specified destination folder.
+
+    Args:
+        src_folder (str): The path of the source folder.
+        dst_folder (str): The path of the destination folder.
+        do_convert (bool): Whether to convert the JXR images to PNG.
+        update_progress (function): A function to update the progress bar.
+        file_list (list): A list of files to sort.
+        total_files (int): The total number of files to sort.
+        check_cancel (bool, optional): Whether to check if the user has cancelled the sorting operation. Defaults to False.
+    """
     common_part = common_filename_part(src_folder)
     start_time = time.time()
 
     for current_file, entry in enumerate(file_list, start=1):
-        if check_cancel and cancel_sorting:  # Vérifier si l'annulation est nécessaire
+        if check_cancel and cancel_sorting:
             break
 
         filename = entry.name
         file_ext = os.path.splitext(filename)[1].lower()[1:]
         game_name = find_game_name(filename, common_part)
 
-        create_folder_structure(dst_folder, game_name)
+        create_folder_structure(dst_folder, game_name, file_ext)
         src_path = os.path.join(src_folder, filename)
         dst_path = os.path.join(dst_folder, game_name, file_ext.upper(), filename)
 
@@ -181,8 +252,10 @@ def sort_files(
                     "Conv",
                     os.path.splitext(filename)[0] + "-sdr.png",
                 )
+                script_dir = os.path.dirname(os.path.realpath(__file__))
+                hdrfix_path = os.path.join(script_dir, "hdrfix.exe")
                 subprocess.call(
-                    ["hdrfix.exe", dst_path, conv_path],
+                    [hdrfix_path, dst_path, conv_path],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.STDOUT,
                 )
@@ -197,23 +270,42 @@ def sort_files(
         )
 
 
-# Pour la ligne de commande avec tqdm
 def args_tri(src_folder, dst_folder, do_convert, total_files, file_list):
+    """
+    Runs the sorting operation, only used when the script is run with command line arguments.
+
+    Args:
+        src_folder (str): The path of the source folder.
+        dst_folder (str): The path of the destination folder.
+        do_convert (bool): Whether to convert the JXR images to PNG.
+        total_files (int): The total number of files to sort.
+        file_list (list): A list of files to sort.
+    """
     with tqdm(total=total_files, desc="Tri des fichiers", unit="fichier") as pbar:
         sort_files(
             src_folder,
             dst_folder,
             do_convert,
-            lambda _, __: pbar.update(1),
+            lambda curr, total, _, __: pbar.update(1),
             file_list,
             total_files,
         )
 
 
-# Pour l'interface graphique avec la barre de progression Tkinter
 def tri(
     src_folder, dst_folder, do_convert, update_progress_bar, total_files, file_list
 ):
+    """
+    Runs the sorting operation with gui.
+
+    Args:
+        src_folder (str): The path of the source folder.
+        dst_folder (str): The path of the destination folder.
+        do_convert (bool): Whether to convert the JXR images to PNG.
+        update_progress_bar (function): A function to update the progress bar.
+        total_files (int): The total number of files to sort.
+        file_list (list): A list of files to sort.
+    """
     sort_files(
         src_folder,
         dst_folder,
@@ -226,7 +318,15 @@ def tri(
 
 
 def build_gui(root, container):
-    # Ajouter un bouton pour sélectionner le dossier source
+    """
+    Builds the gui. This function is only used when the script is run without command line arguments.
+    Set all the widgets to the container and binds the events.
+    Creates the sorting operation and starts it when the start button is clicked.
+
+    Args:
+        root (ThemedTk): The root window.
+        container (Frame): The container for the widgets.
+    """
     src_button = ttk.Button(
         container,
         text="Sélectionner le dossier source",
@@ -234,13 +334,11 @@ def build_gui(root, container):
     )
     src_button.grid(row=0, column=0, sticky="nsew", padx=(0, 10), pady=(0, 10))
 
-    # Ajouter un champ de texte pour afficher le dossier source sélectionné
     src_var = tk.StringVar()
     src_var.set("Aucun dossier sélectionné")
     src_entry = ttk.Entry(container, textvariable=src_var, state="readonly")
     src_entry.grid(row=0, column=1, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
-    # Ajouter un bouton pour sélectionner le dossier de destination
     dst_button = ttk.Button(
         container,
         text="Sélectionner le dossier de destination",
@@ -248,7 +346,6 @@ def build_gui(root, container):
     )
     dst_button.grid(row=1, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
-    # Ajouter un champ de texte pour afficher le dossier de destination sélectionné
     dst_var = tk.StringVar()
     dst_var.set("Aucun dossier sélectionné")
     dst_entry = ttk.Entry(container, textvariable=dst_var, state="readonly")
@@ -258,7 +355,6 @@ def build_gui(root, container):
         dst_entry.configure(state="readonly" if same_dir.get() else "disabled")
         dst_button.configure(state="normal" if same_dir.get() else "disabled")
 
-    # Ajouter une case à cocher pour trier dans le même dossier
     same_dir = tk.BooleanVar(value=False)
     same_dir_check = ttk.Checkbutton(
         container, text="Trier dans le même dossier", variable=same_dir
@@ -266,7 +362,6 @@ def build_gui(root, container):
     same_dir_check.grid(row=2, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10))
     same_dir_check.bind("<Button-1>", lambda event: dis())
 
-    # Ajouter une case à cocher pour désactiver la conversion des images
     convert_var = tk.BooleanVar(value=True)
     convert_check = ttk.Checkbutton(
         container, text="Convertir les images JXR", variable=convert_var
@@ -278,7 +373,6 @@ def build_gui(root, container):
             dst_var.set(src_var.get())
         start_sorting(src_var.get(), dst_var.get(), convert_var.get())
 
-    # Ajouter un bouton pour lancer le tri des fichiers
     start_button = ttk.Button(
         container,
         text="Démarrer le tri",
@@ -288,7 +382,6 @@ def build_gui(root, container):
     )
     start_button.grid(row=4, column=1, sticky="nsew", pady=(0, 10), padx=(0, 10))
 
-    # Ajouter une barre de progression pour le tri des fichiers
     progress_bar = ttk.Progressbar(container, orient="horizontal", mode="determinate")
     progress_bar.grid(
         row=5, column=0, sticky="nsew", pady=(0, 10), padx=(0, 10), columnspan=2
@@ -340,12 +433,10 @@ def build_gui(root, container):
         start_button.configure(text="Démarrer le tri", command=lambda: sort())
         restore_widget_states(widgets, saved_states)
 
-    # Ajouter une fonction pour lancer le tri des fichiers
     def start_sorting(src_folder, dst_folder, do_convert):
         global cancel_sorting
         cancel_sorting = False
 
-        # Vérifier si les dossiers source et destination existent
         if not os.path.exists(src_folder):
             messagebox.showerror("Erreur", "Le dossier source n'existe pas.")
             return
@@ -354,7 +445,6 @@ def build_gui(root, container):
             messagebox.showerror("Erreur", "Le dossier de destination n'existe pas.")
             return
 
-        # Récupérer le nombre de fichiers dans le dossier source
         file_list = [
             entry
             for entry in os.scandir(src_folder)
@@ -362,7 +452,6 @@ def build_gui(root, container):
             and not entry.name.startswith(".")
             and entry.name != "desktop.ini"
         ]
-        # Vérifier si le dossier source est vide
         total_files = len(file_list)
         if total_files == 0:
             messagebox.showerror(
@@ -375,7 +464,6 @@ def build_gui(root, container):
             text="Annuler", command=lambda: cancel_sorting_operation()
         )
 
-        # Ajouter une indication que le programme est en train de travailler, et que l'utilisateur doit patienter, vérouiller les boutons, etc.
         saved_states = save_widget_states(widgets)
         set_widget_state(widgets, "disabled")
 
@@ -392,7 +480,6 @@ def build_gui(root, container):
         root.title("Organisateur de fichiers")
         start_button.configure(text="Démarrer le tri")
 
-        # Afficher un message de fin
         if cancel_sorting:
             messagebox.showinfo("Annulé", "Le tri des fichiers a été annulé.")
         else:
@@ -400,7 +487,6 @@ def build_gui(root, container):
 
 
 def start_args_sorting(src_folder, dst_folder, do_convert):
-    # Vérifier si les dossiers source et destination existent
     if not os.path.exists(src_folder):
         print(Fore.RED + "Erreur ❌ Le dossier source n'existe pas." + Style.RESET_ALL)
         return
@@ -413,7 +499,6 @@ def start_args_sorting(src_folder, dst_folder, do_convert):
         )
         return
 
-    # Récupérer le nombre de fichiers dans le dossier source
     file_list = [
         entry
         for entry in os.scandir(src_folder)
@@ -421,7 +506,6 @@ def start_args_sorting(src_folder, dst_folder, do_convert):
         and not entry.name.startswith(".")
         and entry.name != "desktop.ini"
     ]
-    # Vérifier si le dossier source est vide
     total_files = len(file_list)
     if total_files == 0:
         print(
@@ -444,6 +528,11 @@ def start_args_sorting(src_folder, dst_folder, do_convert):
 
 
 def main():
+    """
+    Handles the command line arguments and starts the gui or the sorting operation.
+    Calls the start_args_sorting function if the script is run with command line arguments.
+    Calls the build_gui function if the script is run without command line arguments.
+    """
     args = parse_args()
 
     if args:
