@@ -31,10 +31,11 @@ def sort_files(
     start_time = time.time()
 
     for current_file, entry in enumerate(file_list, start=1):
-        from gui import cancel_sorting
+        if check_cancel:
+            from gui import cancel_sorting
 
-        if check_cancel and cancel_sorting:
-            break
+            if cancel_sorting:
+                break
 
         filename = entry.name
         file_ext = os.path.splitext(filename)[1].lower()[1:]

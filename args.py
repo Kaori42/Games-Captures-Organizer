@@ -3,6 +3,9 @@ import sys
 import os
 from colorama import Fore, Style
 
+from start_sorting import start_args_sorting
+
+
 def parse_args():
     """
     Parse command line arguments using the argparse module and return the parsed arguments.
@@ -22,7 +25,7 @@ def parse_args():
     return parser.parse_args() if len(sys.argv) > 1 else None
 
 
-def start_args_sorting(src_folder, dst_folder, do_convert):
+def args_sorting(src_folder, dst_folder, do_convert):
     """
     Starts the sorting operation, only used when the script is run with command line arguments.
 
@@ -100,7 +103,7 @@ def check_args(args):
             )
             return
     if args.src and args.dst:
-        start_args_sorting(args.src, args.dst, args.convert)
+        args_sorting(args.src, args.dst, args.convert)
     else:
         print(
             Fore.RED
