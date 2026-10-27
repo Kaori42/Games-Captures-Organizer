@@ -1,7 +1,7 @@
 # Games-Captures-Organizer
 
 Converts NVIDIA app HDR screenshots (`.jxr`) to SDR PNG using `hdrfix.exe`
-(bundled, from [brion/hdrfix](https://github.com/brion/hdrfix)).
+(bundled, from [bvibber/hdrfix](https://github.com/bvibber/hdrfix)).
 
 The NVIDIA app already stores captures in one folder per game:
 

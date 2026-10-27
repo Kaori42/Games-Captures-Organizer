@@ -10,8 +10,8 @@ from tqdm import tqdm
 from convert import ConversionError, convert, find_hdrfix, find_jobs
 
 DEFAULT_SRC = Path.home() / "Videos" / "NVIDIA"
-# hdrfix already spreads the tone mapping over all cores, but JXR decoding and PNG
-# encoding are single-threaded, so a few files in parallel still pays off.
+# hdrfix already spreads tone mapping and PNG encoding over all cores, but JXR
+# decoding is single-threaded, so a few files in parallel still pays off.
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
 
